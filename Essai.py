@@ -22,19 +22,18 @@ class FinancialRatios:
 
 # 🔹 Interface Streamlit
 
+import streamlit as st
+import pandas as pd
+
 st.title("📊 Analyse Financière")
 
-# input utilisateur
 ticker = st.text_input("Entrez le ticker (ex: AMZN, AAPL, TSLA)", "AMZN")
 
 if ticker:
     try:
         ratios = FinancialRatios(ticker)
-
-        # récupérer les dates disponibles
         available_years = list(ratios.balance_sheet.columns.astype(str))
 
-        # sélection utilisateur
         selected_years = st.multiselect(
             "Choisissez les années",
             available_years,
@@ -44,9 +43,14 @@ if ticker:
         if selected_years:
             result = ratios.current_ratio(selected_years)
 
+            df = pd.DataFrame({
+                "Année": selected_years,
+                "Current Ratio": result
+            })
+
             st.subheader("Current Ratio")
-            st.write(result)
-            st.line_chart(result, x='selected_years', y='current_ratio' color='current_ratio')
+            st.dataframe(df)
+            st.line_chart(df.set_index("Année"))
 
     except Exception as e:
         st.error(f"Erreur : {e}")
