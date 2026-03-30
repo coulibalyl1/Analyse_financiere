@@ -27,13 +27,17 @@ import pandas as pd
 
 st.title("📊 Analyse Financière")
 
+# input utilisateur
 ticker = st.text_input("Entrez le ticker (ex: AMZN, AAPL, TSLA)", "AMZN")
 
 if ticker:
     try:
         ratios = FinancialRatios(ticker)
+
+        # récupérer les dates disponibles
         available_years = list(ratios.balance_sheet.columns.astype(str))
 
+        # sélection utilisateur
         selected_years = st.multiselect(
             "Choisissez les années",
             available_years,
@@ -43,14 +47,29 @@ if ticker:
         if selected_years:
             result = ratios.current_ratio(selected_years)
 
-            df = pd.DataFrame({
-                "Année": selected_years,
-                "Current Ratio": result
-            })
-
             st.subheader("Current Ratio")
-            st.dataframe(df)
-            st.line_chart(df.set_index("Année"))
+            st.write(result)
+
+            # convertir en DataFrame si nécessaire
+            if isinstance(result, dict):
+                df_result = pd.DataFrame({
+                    "selected_years": list(result.keys()),
+                    "current_ratio": list(result.values())
+                })
+            else:
+                df_result = pd.DataFrame(result)
+
+            # s'assurer que les colonnes existent
+            if "selected_years" not in df_result.columns:
+                df_result["selected_years"] = selected_years
+
+            if "current_ratio" not in df_result.columns:
+                possible_col = df_result.columns[0]
+                df_result = df_result.rename(columns={possible_col: "current_ratio"})
+
+            st.line_chart(
+                df_result.set_index("selected_years")["current_ratio"]
+            )
 
     except Exception as e:
         st.error(f"Erreur : {e}")
